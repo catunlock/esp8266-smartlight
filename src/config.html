@@ -1,0 +1,68 @@
+<html>
+    <style>
+        body{
+            background-color:#b2dfdb;
+            }
+        a{
+            margin:.8em;
+            display:block;
+            text-align: center;
+            padding: .8em 3em;
+            background: green;
+            width: auto;
+            padding: .8em 3em;
+            color:white;
+            text-decoration:none;
+            border-radius: 1em;
+        }
+
+        input {
+                 margin: 0.8em 00.8em;
+                 display:block;
+                 padding: .8em 1em;
+                 background: white;
+                 width: 99%;
+                 /*! padding: .8em 3em; */
+                 box-sizing : border-box;
+                 text-decoration:none;
+                 border-radius: 0.2em;
+             }
+
+        div {
+           margin: 0.8em;
+        }
+
+        form {
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 0.2em;
+        }
+
+        .submit {
+            background: green;
+            color: white;
+        }
+
+        .warning {
+            text-align: center;
+            color: red;
+        }
+    </style>
+    <head><meta charset='utf-8'></head>
+    <body>
+        <form action="/" method="post">
+            <div>mDNS name</div>
+            <input type="text" name="mdns" length="30" />
+            <input type="submit" class="submit" value="Save" />
+        </form>
+        <form action="/" method="post">
+            <div>SSID</div>
+            <input type="text" name="SSID" length="10" />
+            <div>PASSWORD</div>
+            <input type="password" name="PSK" lenth="10" />
+            <div class="warning">The smart light will connect to the specified network when the power is turned on again.</div>
+            <input type="submit" class="submit" value="Save" />
+            <a href=\return\>Return</a>
+        </form>
+    </body>
+</html>
