@@ -41,11 +41,11 @@ String page_index = "<html>\n"
 "  </head>\n"
 + style +
 "  <body>\n"
-"      <a href=\"on\">Turn On</a>\n"
-"      <a href=\"off\">Off</a>\n";
+"      <a href=\"web_on\">Turn On</a>\n"
+"      <a href=\"web_off\">Off</a>\n";
 
-String html_disableswitch = "      <a href=\"disableswitch\">Disable Fisical</a>\n";
-String html_enableswitch = "<a href=\"enableswitch\">Enable Fisical</a>\n";
+String html_disableswitch = "      <a href=\"web_disableswitch\">Disable Fisical</a>\n";
+String html_enableswitch = "<a href=\"web_enableswitch\">Enable Fisical</a>\n";
 String html_light_on = "      <center><h1>💡</h1></center>\n";
 String html_light_off = "      <center><h1>🕯️</h1></center>\n";
 

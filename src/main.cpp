@@ -12,7 +12,9 @@
 
 #include "webpage.h"
 
-#define RELE_PIN D2
+#define RELE_PIN D1
+#define SWITCH_PIN D8
+
 #define ADDR_STATUS 0
 #define ADDR_SWITCH 1
 #define ADDR_WIFI 2
@@ -29,6 +31,7 @@ char light_status = 0;
 char switch_status = 1;
 char status_changed = 0;
 char fallback = 0;
+char switch_pressed = 0;
 
 struct WiFiData {
     char ssid[100];
@@ -99,7 +102,7 @@ void configWebServer() {
 
     });
 
-    server.on("/off", []() {
+    server.on("/web_off", []() {
         status_changed = 1;
         light_status = STATUS_RELE_OFF;
         Serial.println("Web Command: Turn Off.");
@@ -110,7 +113,7 @@ void configWebServer() {
         }
     });
 
-    server.on("/on", []() {
+    server.on("/web_on", []() {
         status_changed = 1;
         light_status = STATUS_RELE_ON;
         Serial.println("Web Command: Turn on.");
@@ -121,7 +124,7 @@ void configWebServer() {
         }
     });
 
-    server.on("/enableswitch", []() {
+    server.on("/web_enableswitch", []() {
         setSwitchStatus(1);
         Serial.println("Web Command: Enable Switch.");
         if (light_status == STATUS_RELE_ON) {
@@ -131,13 +134,64 @@ void configWebServer() {
         }
     });
 
-    server.on("/disableswitch", []() {
+    server.on("/web_disableswitch", []() {
         setSwitchStatus(0);
         Serial.println("Web Command: Disable Switch.");
         if (light_status == STATUS_RELE_ON) {
             server.send(200, "text/html", page_on_switch_off);
         } else {
             server.send(200, "text/html", page_off_switch_off);
+        }
+    });
+
+    server.on("/off", []() {
+        status_changed = 1;
+        light_status = STATUS_RELE_OFF;
+        Serial.println("Web Command: Turn Off.");
+        server.send(200, "text/html", "off");
+
+    });
+
+    server.on("/on", []() {
+        status_changed = 1;
+        light_status = STATUS_RELE_ON;
+        Serial.println("Web Command: Turn on.");
+        server.send(200, "text/html", "on");
+    });
+
+    server.on("/enableswitch", []() {
+        setSwitchStatus(1);
+        Serial.println("Web Command: Enable Switch.");
+        server.send(200, "text/html", "enableswitch");
+    });
+
+    server.on("/disableswitch", []() {
+        setSwitchStatus(0);
+        Serial.println("Web Command: Disable Switch.");
+        server.send(200, "text/html", "disableswitch");
+    });
+
+    server.on("/name", []() {
+        setSwitchStatus(0);
+        Serial.println("Web Command: Disable Switch.");
+        server.send(200, "text/html", wifi_data.mdns);
+    });
+
+    server.on("/light_status", []() {
+        Serial.println("Web Command: Status.");
+        if(light_status == STATUS_RELE_ON){
+            server.send(200, "text/html", "on");
+        }else {
+            server.send(200, "text/html", "off");
+        }
+    });
+
+    server.on("/switch_status", []() {
+        Serial.println("Web Command: switch_status.");
+        if(switch_status == 1){
+            server.send(200, "text/html", "enabled");
+        }else {
+            server.send(200, "text/html", "disabled");
         }
     });
 
@@ -179,7 +233,6 @@ void connectWiFi() {
     while (WiFi.status() != WL_CONNECTED && i < 40) {
         delay(500);
         Serial.print(".");
-
         i++;
     }
 
@@ -223,21 +276,7 @@ void configMDNS() {
     MDNS.addService("http", "tcp", 80);
 }
 
-void setup() {
-    Serial.begin(9600);
-
-    pinMode(RELE_PIN, OUTPUT);
-
-    EEPROM.begin(512);
-
-    EEPROM.get(ADDR_WIFI, wifi_data);
-
-    light_status = EEPROM.read(ADDR_STATUS);
-    switch_status = EEPROM.read(ADDR_SWITCH);
-
-    Serial.print("Previus state of the rele: ");
-    Serial.println(light_status);
-
+void recovery_poweroff() {
     if (switch_status == 1) {
         if (light_status == STATUS_RELE_OFF) {
             setLightStatus(STATUS_RELE_ON);
@@ -251,16 +290,56 @@ void setup() {
             setLightStatus(STATUS_RELE_ON);
         }
     }
+}
+
+void setup() {
+    Serial.begin(9600);
+
+    pinMode(RELE_PIN, OUTPUT);
+    pinMode(SWITCH_PIN, INPUT_PULLUP);
+
+    EEPROM.begin(512);
+
+    EEPROM.get(ADDR_WIFI, wifi_data);
+
+    light_status = EEPROM.read(ADDR_STATUS);
+    switch_status = EEPROM.read(ADDR_SWITCH);
+
+    Serial.print("Previus state of the rele: ");
+    Serial.println(light_status);
+
+    setLightStatus(light_status);
+
+    // Uncoment the following line if you use the loss of power to switch the status os the light.
+    // recovery_poweroff();
 
     connectWiFi();
     configWebServer();
     configMDNS();
 }
 
+void toggleLight() {
+    if (light_status == STATUS_RELE_ON) {
+        setLightStatus(STATUS_RELE_OFF);
+    }else{
+        setLightStatus(STATUS_RELE_ON);
+    }
+}
+
 void loop() {
     if (status_changed == 1) {
         setLightStatus(light_status);
         status_changed = 0;
+    }
+
+    char switch_read = digitalRead(SWITCH_PIN);
+    if (switch_read == HIGH && switch_pressed == false) {
+        toggleLight();
+        switch_pressed = true;
+    }
+
+    if (switch_read == LOW) {
+        switch_pressed = false;
     }
 
     server.handleClient();
